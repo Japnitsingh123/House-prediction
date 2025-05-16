@@ -21,7 +21,7 @@ html, body, [class*="css"]  {
 }
 
 .stApp {
-    background-image: url("https://images.unsplash.com/photo-1502673530728-f79b4cab31b1");
+    background-image: url("https://images.trvl-media.com/lodging/101000000/100740000/100736200/100736154/10ed0f28.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill");
     background-size: cover;
     background-attachment: fixed;
 }
@@ -39,26 +39,35 @@ h1, h3 {
     text-shadow: 2px 2px 8px rgba(0,0,0,0.85);
 }
 
+/* Black buttons with white text */
 .stButton > button {
-    background-color: #3498db;
-    color: white;
+    background-color: black !important;
+    color: white !important;
     font-weight: bold;
     border-radius: 8px;
     padding: 10px 20px;
-    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
 }
 
 .stButton > button:hover {
-    background-color: #2980b9;
-    box-shadow: 0 8px 20px rgba(41, 128, 185, 0.5);
+    background-color: #222 !important;
+    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+}
+
+.text-block {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 </style>
 """, unsafe_allow_html=True)
 
+
 # Load model and preprocessors
 @st.cache_resource
-
 def load_artifacts():
     model = xgb.XGBRegressor()
     model.load_model("xgb_model.json")
@@ -71,6 +80,11 @@ def load_artifacts():
 
 model, scaler, features, le_house_style, le_central_air, df = load_artifacts()
 
+# Initialize session state variables
+for key in ("prediction_made", "show_map"):
+    if key not in st.session_state:
+        st.session_state[key] = False
+
 # Input UI
 st.sidebar.header("Input House Features")
 user_input = {
@@ -80,15 +94,13 @@ user_input = {
     "TotRmsAbvGrd": st.sidebar.slider("Rooms Above Ground", 1, 20, 6),
     "Fireplaces": st.sidebar.slider("Fireplaces", 0, 5, 1),
     "LotArea": st.sidebar.number_input("Lot Area (sq ft)", 500, 100000, 8000),
-     "HouseStyle": st.sidebar.selectbox("House Style", list(le_house_style)),
+    "HouseStyle": st.sidebar.selectbox("House Style", list(le_house_style)),
     "CentralAir": st.sidebar.selectbox("Central Air", list(le_central_air)),
-
 }
 
 # Encode categorical
 house_style_encoded = list(le_house_style).index(user_input["HouseStyle"])
 central_air_encoded = list(le_central_air).index(user_input["CentralAir"])
-
 
 input_vector = np.array([
     user_input["YearBuilt"],
@@ -111,39 +123,65 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Prediction
+# Prediction button and logic
 if st.button("Predict Price 💰"):
     prediction = model.predict(input_scaled)[0]
     st.session_state["prediction"] = prediction
-    st.success(f"💲 Estimated Sale Price: ${prediction:,.2f}")
 
-    # Find closest real price
     closest_idx = (df["SalePrice"] - prediction).abs().idxmin()
     closest_price = df.loc[closest_idx, "SalePrice"]
     error = abs(closest_price - prediction)
     error_pct = (error / closest_price) * 100
 
-    st.markdown(f"""
-        **Closest Actual Sale Price:** ${closest_price:,.2f}  
-        **Prediction Error:** ${error:,.2f} ({error_pct:.2f}%)
-    """)
+    st.session_state["closest_price"] = closest_price
+    st.session_state["error"] = error
+    st.session_state["error_pct"] = error_pct
+    st.session_state["prediction_made"] = True
 
-# Show Map
+# Show prediction details if prediction was made
+if st.session_state["prediction_made"]:
+    st.markdown(f"""
+    <div class="text-block">
+        <h3>💡 Prediction Details</h3>
+        <p><strong>💲 Estimated Sale Price:</strong> ${st.session_state['prediction']:,.2f}</p>
+        <p><strong>📊 Closest Actual Sale Price:</strong> ${st.session_state['closest_price']:,.2f}</p>
+        <p><strong>❗ Prediction Error:</strong> ${st.session_state['error']:,.2f} ({st.session_state['error_pct']:.2f}%)</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Show Map button and logic
 if st.button("Show Location on Map 🗺️"):
-    m = folium.Map(location=[42.0308, -93.6319], zoom_start=12)
+    st.session_state["show_map"] = True
+
+if st.session_state["show_map"]:
+    st.markdown(
+        """
+        <div style="background-color: transparent; padding: 0; border-radius: 0;">
+        """,
+        unsafe_allow_html=True,
+    )
+
+    m = folium.Map(location=[42.0308, -93.6319], zoom_start=13)
     folium.Marker(
         location=[42.0308, -93.6319],
         popup="Ames, Iowa",
         icon=folium.Icon(color="green", icon="home")
     ).add_to(m)
-    st_folium(m, width=700, height=450)
+
+    st_folium(m, width=500, height=350)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 # Reviews Section
 st.markdown("""
----
-### ⭐ User Reviews
-- "This tool gave me a surprisingly close estimate!"
-- "Love the interface and accuracy."
-- "Helpful for comparing properties in Ames."
----
-""")
+<div class="text-block">
+    <h3>⭐ User Reviews</h3>
+    <ul>
+        <li>"This tool gave me a surprisingly close estimate!"</li>
+        <li>"Love the interface and accuracy."</li>
+        <li>"Helpful for comparing properties in Ames."</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
