@@ -1,3 +1,4 @@
+import xgboost as xgb
 import streamlit as st
 import pandas as pd
 import joblib
@@ -59,7 +60,8 @@ h1, h3 {
 @st.cache_resource
 
 def load_artifacts():
-    model = joblib.load("xgb_houseprice_model.pkl")
+    model = xgb.XGBRegressor()
+    model.load_model("xgb_model.json")
     scaler = joblib.load("houseprice_scaler.pkl")
     features = joblib.load("houseprice_features.pkl")
     le_house_style = joblib.load("HouseStyle_labelencoder.pkl")
@@ -78,13 +80,15 @@ user_input = {
     "TotRmsAbvGrd": st.sidebar.slider("Rooms Above Ground", 1, 20, 6),
     "Fireplaces": st.sidebar.slider("Fireplaces", 0, 5, 1),
     "LotArea": st.sidebar.number_input("Lot Area (sq ft)", 500, 100000, 8000),
-    "HouseStyle": st.sidebar.selectbox("House Style", le_house_style.classes_),
-    "CentralAir": st.sidebar.selectbox("Central Air", le_central_air.classes_),
+     "HouseStyle": st.sidebar.selectbox("House Style", list(le_house_style)),
+    "CentralAir": st.sidebar.selectbox("Central Air", list(le_central_air)),
+
 }
 
 # Encode categorical
-house_style_encoded = le_house_style.transform([user_input["HouseStyle"]])[0]
-central_air_encoded = le_central_air.transform([user_input["CentralAir"]])[0]
+house_style_encoded = list(le_house_style).index(user_input["HouseStyle"])
+central_air_encoded = list(le_central_air).index(user_input["CentralAir"])
+
 
 input_vector = np.array([
     user_input["YearBuilt"],
