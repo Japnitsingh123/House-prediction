@@ -1,44 +1,39 @@
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
 import joblib
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
-# Load dataset
+# Load data
 df = pd.read_csv("train.csv")
 
 # Select features and target
-features = ['YearBuilt', 'OverallQual', 'GarageCars', 'TotRmsAbvGrd', 'Fireplaces', 'LotArea', 'HouseStyle', 'CentralAir']
-target = 'SalePrice'
-
+features = [
+    "YearBuilt", "OverallQual", "GarageCars", "TotRmsAbvGrd", 
+    "Fireplaces", "LotArea", "HouseStyle", "CentralAir"
+]
 X = df[features]
-y = df[target]
+y = df["SalePrice"]
 
-# Label encode categorical columns
-le_house_style = LabelEncoder()
-X['HouseStyle'] = le_house_style.fit_transform(X['HouseStyle'])
-joblib.dump(le_house_style, "HouseStyle_labelencoder.pkl")
+# Label encode categories
+X["HouseStyle"] = X["HouseStyle"].astype("category")
+X["CentralAir"] = X["CentralAir"].astype("category")
+house_style_classes = X["HouseStyle"].cat.categories
+central_air_classes = X["CentralAir"].cat.categories
+X["HouseStyle"] = X["HouseStyle"].cat.codes
+X["CentralAir"] = X["CentralAir"].cat.codes
 
-le_central_air = LabelEncoder()
-X['CentralAir'] = le_central_air.fit_transform(X['CentralAir'])
-joblib.dump(le_central_air, "CentralAir_labelencoder.pkl")
-
-# Scale features
+# Scale
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Save scaler and feature list
+# Train model
+model = xgb.XGBRegressor()
+model.fit(X_scaled, y)
+
+# Save
+joblib.dump(model, "xgb_houseprice_model.pkl")
 joblib.dump(scaler, "houseprice_scaler.pkl")
 joblib.dump(features, "houseprice_features.pkl")
-
-# Split dataset for training/testing
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
-
-# Train XGBoost regression model
-model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
-
-# Save the model
-joblib.dump(model, "xgb_houseprice_model.pkl")
-
-print("Training complete. Model, scaler, and label encoders saved!")
+joblib.dump(house_style_classes, "HouseStyle_labelencoder.pkl")
+joblib.dump(central_air_classes, "CentralAir_labelencoder.pkl")
