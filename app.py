@@ -243,38 +243,38 @@ if st.button("Predict Price 💰"):
         st.session_state["selected_location"] = [42.0308, -93.6319]
         st.session_state["neighborhood"] = "Unknown"
 
-# Show prediction details if prediction was made
-if st.session_state["prediction_made"]:
-    st.markdown(f"""
-    <div class="text-block">
+    # Show prediction details if prediction was made
+    if st.session_state["prediction_made"]:
+        st.markdown(f"""
+        <div class="text-block">
         <h3>💡 Prediction Details</h3>
         <p><strong>💲 Estimated Sale Price:</strong> ${st.session_state['prediction']:,.2f}</p>
         <p><strong>📊 Closest Actual Sale Price:</strong> ${st.session_state['closest_price']:,.2f}</p>
         <p><strong>❗ Prediction Error:</strong> ${st.session_state['error']:,.2f} ({st.session_state['error_pct']:.2f}%)</p>
-    </div>
-    """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
     # Evaluate on test set (20%)
-X_test_scaled = df_pred[features].values
-y_test = df_pred["SalePrice"].values
-y_pred_test = model.predict(X_test_scaled)
+    X_test_scaled = df_pred[features].values
+    y_test = df_pred["SalePrice"].values
+    y_pred_test = model.predict(X_test_scaled)
 
-rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
-mae = mean_absolute_error(y_test, y_pred_test)
-r2 = r2_score(y_test, y_pred_test)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
+    mae = mean_absolute_error(y_test, y_pred_test)
+    r2 = r2_score(y_test, y_pred_test)
 
-# Display metrics
-st.markdown(f"""
-<div class="text-block">
+    # Display metrics
+    st.markdown(f"""
+    <div class="text-block">
     <h3>📊 Evaluation on 20% Test Data</h3>
     <p><strong>📉 RMSE:</strong> ${rmse:,.2f}</p>
     <p><strong>📦 MAE:</strong> ${mae:,.2f}</p>
     <p><strong>🧮 R² Score:</strong> {r2:.4f}</p>
-</div>
-""", unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
 
- # Show map automatically after prediction
-st.markdown("""
+    # Show map automatically after prediction
+    st.markdown("""
         <style>
         [data-testid="column"] {
             height: 400px !important;
@@ -283,13 +283,13 @@ st.markdown("""
         </style>
         <h3 style="color: white; margin-bottom: 15px; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">📍 Ames, Iowa Location</h3>
         <div class="map-wrapper">
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
- # Get center coordinates (Ames, Iowa)
-center_lat, center_lon = st.session_state["selected_location"]
+    # Get center coordinates (Ames, Iowa)
+    center_lat, center_lon = st.session_state["selected_location"]
 
     # Configure the map with transparent background
-m = folium.Map(
+    m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=13,
         tiles='CartoDB positron',
@@ -298,7 +298,7 @@ m = folium.Map(
     )
     
     # Add custom CSS to the map's HTML
-css = """
+    css = """
     <style>
     body, html {
         height: 400px !important;
@@ -308,10 +308,10 @@ css = """
     }
     </style>
     """
-m.get_root().header.add_child(folium.Element(css))
+    m.get_root().header.add_child(folium.Element(css))
     
     # Add marker for selected location
-if st.session_state.get("last_prediction"):
+    if st.session_state.get("last_prediction"):
         pred = st.session_state["last_prediction"]
         features = pred["features"]
         neighborhood = st.session_state.get("neighborhood", "Unknown")
@@ -348,7 +348,7 @@ if st.session_state.get("last_prediction"):
         ).add_to(m)
 
     # Display the map with custom configuration
-with st.container():
+    with st.container():
         _map = st_folium(
             m,
             height=400,
@@ -372,16 +372,16 @@ with st.container():
             </div>
             """, unsafe_allow_html=True)
     
-st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# Reviews Section
-st.markdown("""
-<div class="text-block">
+    # Reviews Section
+    st.markdown("""
+    <div class="text-block">
     <h3>⭐ User Reviews</h3>
     <ul>
         <li>"This tool gave me a surprisingly close estimate!"</li>
         <li>"Love the interface and accuracy."</li>
         <li>"Helpful for comparing properties in Ames."</li>
     </ul>
-</div>
-""", unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
