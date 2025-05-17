@@ -374,14 +374,14 @@ if st.button("Predict Price 💰"):
     
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Reviews Section
-    st.markdown("""
-    <div class="text-block">
-    <h3>⭐ User Reviews</h3>
-    <ul>
-        <li>"This tool gave me a surprisingly close estimate!"</li>
-        <li>"Love the interface and accuracy."</li>
-        <li>"Helpful for comparing properties in Ames."</li>
-    </ul>
-    </div>
-    """, unsafe_allow_html=True)
+ # Reviews Section
+st.markdown("""
+<div class="text-block">
+<h3>⭐ User Reviews</h3>
+<ul>
+    <li>"This tool gave me a surprisingly close estimate!"</li>
+    <li>"Love the interface and accuracy."</li>
+    <li>"Helpful for comparing properties in Ames."</li>
+</ul>
+</div>
+""", unsafe_allow_html=True)
